@@ -1,0 +1,29 @@
+{
+  "siteName": {
+    "value": "VirtualFridgebackend"
+  },
+  "hostingPlanName": {
+    "value": "VirtualFridge"
+  },
+  "siteLocation": {
+    "value": "West Europe"
+  },
+  "sku": {
+    "value": "Free"
+  },
+  "workerSize": {
+    "value": "0"
+  },
+  "siteMode": {
+    "value": "Limited"
+  },
+  "computeMode": {
+    "value": "0"
+  },
+  "subscriptionId": {
+    "value": "9864a910-c475-4479-850d-d2dce20efc8d"
+  },
+  "resourceGroup": {
+    "value": "VirtualFridge"
+  }
+}

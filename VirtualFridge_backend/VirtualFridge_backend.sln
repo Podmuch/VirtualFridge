@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualFridge_backend", "VirtualFridge_backend\VirtualFridge_backend.csproj", "{088E5DF1-95AA-4CAD-96F1-7BC81299DDC3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PublishScripts", "PublishScripts", "{1DB52315-BE44-493D-82FD-CEF6D8C25BA9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{5A44F8EB-192C-470D-A07B-35C69D4BDE08}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Scripts\Deploy-AzureResourceGroup.ps1 = PublishScripts\Scripts\Deploy-AzureResourceGroup.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{1593A4EA-C068-46F5-9BA2-C1D736BC1BE2}"
+	ProjectSection(SolutionItems) = preProject
+		PublishScripts\Templates\VirtualFridgebackend.json = PublishScripts\Templates\VirtualFridgebackend.json
+		PublishScripts\Templates\VirtualFridgebackend.param.dev.json = PublishScripts\Templates\VirtualFridgebackend.param.dev.json
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{088E5DF1-95AA-4CAD-96F1-7BC81299DDC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{088E5DF1-95AA-4CAD-96F1-7BC81299DDC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{088E5DF1-95AA-4CAD-96F1-7BC81299DDC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{088E5DF1-95AA-4CAD-96F1-7BC81299DDC3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5A44F8EB-192C-470D-A07B-35C69D4BDE08} = {1DB52315-BE44-493D-82FD-CEF6D8C25BA9}
+		{1593A4EA-C068-46F5-9BA2-C1D736BC1BE2} = {1DB52315-BE44-493D-82FD-CEF6D8C25BA9}
+	EndGlobalSection
+EndGlobal
