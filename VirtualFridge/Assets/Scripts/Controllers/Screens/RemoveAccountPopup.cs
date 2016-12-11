@@ -4,8 +4,6 @@ using UnityEngine.UI;
 
 public class RemoveAccountPopup : AbstractScreen
 {
-    private const string WRONG_CREDENTIALS = "Błąd uwierzytelnienia, przeloguj się i ponów akcję";
-    
     #region SCENE REFERENCE
 
     public Text ErrorMessage;
@@ -36,38 +34,19 @@ public class RemoveAccountPopup : AbstractScreen
     {
         if (isClickable)
         {
-            StartCoroutine(TryToRemoveAccount());
+            isClickable = false;
+            ErrorMessage.text = "";
+            StartCoroutine(WebRequestsUtility.TryRemoveAccount(OnAccountRemoved));
+            ErrorMessage.text = WebRequestsUtility.requestError;
+            isClickable = true;
         }
     }
 
     #endregion
-
-    private IEnumerator TryToRemoveAccount()
+    
+    private void OnAccountRemoved()
     {
-        isClickable = false;
-        ErrorMessage.text = "";
-        ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-        string login = ApplicationManager.Instance.GetStoredLogin();
-        string password = ApplicationManager.Instance.GetStoredPassword();
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Remove" + "?login=" + login + "&password=" + password);
-        yield return dataRequest;
-        ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-        if (string.IsNullOrEmpty(dataRequest.error))
-        {
-            if (dataRequest.text.Equals(WRONG_CREDENTIALS))
-            {
-                isClickable = true;
-                ErrorMessage.text = dataRequest.text;
-            }
-            else
-            {
-                ApplicationManager.Instance.LogoutFromTheApp();
-            }
-        }
-        else
-        {
-            isClickable = true;
-            ErrorMessage.text = Utilities.GetErrorMessageFromString(dataRequest.error);
-        }
+        ApplicationManager.Instance.RemoveLocalData();
+        ApplicationManager.Instance.LogoutFromTheApp();
     }
 }

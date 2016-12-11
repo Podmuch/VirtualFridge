@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,7 +29,9 @@ public class ProductsTable : MonoBehaviour
     public void UpdateData()
     {
         RemoveButton.SetActive(SelectedProduct != null);
-        List<ProductData> products = ApplicationManager.Instance.StoredProducts;
+        List<ProductData> products = ApplicationManager.Instance.Products != null ?
+                                     ApplicationManager.Instance.Products.StoredProducts :
+                                     new List<ProductData>();
         CreateMissingEntries(products.Count);
         DisableAllEntries();
         Content.sizeDelta = new Vector2(Content.sizeDelta.x, Header.preferredHeight * products.Count);
@@ -43,7 +46,15 @@ public class ProductsTable : MonoBehaviour
     {
         if (SelectedProduct != null)
         {
-            StartCoroutine(TryToRemoveSelectedProduct());
+            int nextIndex = ApplicationManager.Instance.Products.StoredProducts.IndexOf(SelectedProduct);
+            ApplicationManager.Instance.Products.StoredProducts.Remove(SelectedProduct);
+            SelectedProduct = ApplicationManager.Instance.Products.StoredProducts.Count > nextIndex ? 
+                              ApplicationManager.Instance.Products.StoredProducts[nextIndex] : null;
+            ApplicationManager.Instance.SaveLocalData();
+            StartCoroutine(WebRequestsUtility.TryGetData((data) =>
+            {
+                ApplicationManager.Instance.UpdateData(data, UpdateData);
+            }, () => { }));
         }
         else
         {
@@ -75,26 +86,6 @@ public class ProductsTable : MonoBehaviour
         for (int i = 0; i < TableEntries.Count; i++)
         {
             TableEntries[i].SetState(false);
-        }
-    }
-
-    private IEnumerator TryToRemoveSelectedProduct()
-    {
-        ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-        string login = ApplicationManager.Instance.GetStoredLogin();
-        string password = ApplicationManager.Instance.GetStoredPassword();
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "RemoveProduct" + "?login=" + login + "&password=" + password + "&productID=" + SelectedProduct.Id);
-        yield return dataRequest;
-        ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-        if (string.IsNullOrEmpty(dataRequest.error))
-        {
-            if (!dataRequest.text.Equals(WRONG_CREDENTIALS) && !dataRequest.text.Equals(MISSING_ATTRIBUTES))
-            {
-                int nextIndex = ApplicationManager.Instance.StoredProducts.IndexOf(SelectedProduct);
-                ApplicationManager.Instance.StoredProducts.Remove(SelectedProduct);
-                SelectedProduct = ApplicationManager.Instance.StoredProducts.Count > nextIndex ? ApplicationManager.Instance.StoredProducts[nextIndex] : null;
-                UpdateData();
-            }
         }
     }
 }

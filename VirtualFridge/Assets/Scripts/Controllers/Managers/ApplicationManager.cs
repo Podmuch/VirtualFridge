@@ -1,18 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System;
+using System.Globalization;
+using UnityEngine;
 
 public class ApplicationManager : MonoBehaviour
 {
     public static ApplicationManager Instance { get; private set; }
-
-    #region CLASS SETTINGS
-
-    private const string LOGIN_PREF = "login";
-    private const string PASSWORD_PREF = "password";
-
-    #endregion
 
     #region SCENE REFERENCES
 
@@ -20,11 +13,7 @@ public class ApplicationManager : MonoBehaviour
 
     #endregion
 
-    public bool HasStoredCredentials { get { return !string.IsNullOrEmpty(GetStoredLogin()) && !string.IsNullOrEmpty(GetStoredPassword()); } }
-    private string storedLogin;
-    private string storedPassword;
-
-    public List<ProductData> StoredProducts;
+    public ProductsList Products { get; set; }
     public string ServerURL = "http://virtualfridgebackend.azurewebsites.net/";
 
     #region MONO BEHAVIOUR
@@ -33,6 +22,7 @@ public class ApplicationManager : MonoBehaviour
     {
         Instance = this;
         UiManager.Init();
+        Products = null;
     }
 
     private void Update()
@@ -45,77 +35,160 @@ public class ApplicationManager : MonoBehaviour
 
     #endregion
 
-    public string GetStoredLogin()
+    public void LoginToTheApp(string jsonData)
     {
-        if(string.IsNullOrEmpty(storedLogin))
+        LoadLocalData();
+        UpdateData(jsonData, () =>
         {
-            storedLogin = PlayerPrefs.GetString(LOGIN_PREF, null);
-        }
-        return storedLogin;
-    }
-
-    public string GetStoredPassword()
-    {
-        if(string.IsNullOrEmpty(storedPassword))
-        {
-            storedPassword = PlayerPrefs.GetString(PASSWORD_PREF, null);
-        }
-        return storedPassword;
-    }
-
-    public bool LoginToTheApp(string webDataInTsv)
-    {
-        if (string.IsNullOrEmpty(webDataInTsv))
-        {
-            StoredProducts = new List<ProductData>();
-            SaveCredentials();
+            WebRequestsUtility.SaveCredentials();
             UiManager.ChangeScreen(UiManager.MainScreen);
-            return true;
+        });
+    }
+    
+    public bool EnterOfflineToTheApp()
+    {
+        bool accountExitsts = LoadLocalData();
+        if (accountExitsts)
+        {
+            WebRequestsUtility.SaveCredentials();
+            UiManager.ChangeScreen(UiManager.MainScreen);
         }
         else
         {
-            StoredProducts = new List<ProductData>();
-            string[] dataRecords = webDataInTsv.Split(new char[]{ '\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
-            for(int i = 0; i < dataRecords.Length; i++)
-            {
-                string[] properties = dataRecords[i].Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if(properties.Length != ProductData.PROPERTIES_COUNT)
-                {
-                    StoredProducts.Clear();
-                    return false;
-                }
-                else
-                {
-                    StoredProducts.Add(new ProductData(int.Parse(properties[0]), properties[1], properties[2], decimal.Parse(properties[3]), int.Parse(properties[4])));
-                }
-            }
-            SaveCredentials();
-            UiManager.ChangeScreen(UiManager.MainScreen);
-            return true;
+            WebRequestsUtility.RemoveCredentials();
         }
+        return accountExitsts;
     }
-    
+
     public void LogoutFromTheApp()
     {
-        StoredProducts = new List<ProductData>();
-        RemoveCredentials();
+        Products = null;
+        WebRequestsUtility.RemoveCredentials();
         UiManager.MainScreen.ProductsTable.UpdateData();
         UiManager.ChangeScreen(UiManager.LoginScreen);
     }
 
-    public void RemoveCredentials()
+    public void UpdateData(string jsonData, Action callback)
     {
-        storedLogin = null;
-        storedPassword = null;
-        if (PlayerPrefs.HasKey(LOGIN_PREF)) PlayerPrefs.DeleteKey(LOGIN_PREF);
-        if (PlayerPrefs.HasKey(PASSWORD_PREF)) PlayerPrefs.DeleteKey(PASSWORD_PREF);
+        StartCoroutine(ResolveConflicts(JsonUtility.FromJson<ProductsList>(jsonData), callback));
     }
 
-    private void SaveCredentials()
+    public void RemoveLocalData()
     {
-        storedLogin = UiManager.LoginScreen.LoginField.text;
-        PlayerPrefs.SetString(LOGIN_PREF, storedLogin);
-        storedPassword = UiManager.LoginScreen.PasswordField.text;
-        PlayerPrefs.SetString(PASSWORD_PREF, storedPassword);
+        string fileName = WebRequestsUtility.storedLogin + "_" + WebRequestsUtility.storedPassword;
+        if (PlayerPrefs.HasKey(fileName)) PlayerPrefs.DeleteKey(fileName);
+        PlayerPrefs.Save();
+    }
+
+    public void SaveLocalData()
+    {
+        Products.deviceID = SystemInfo.deviceUniqueIdentifier;
+        Products.modificationDate = DateTime.Now.ToString(new CultureInfo("en-us"));
+        string fileName = WebRequestsUtility.storedLogin + "_" + WebRequestsUtility.storedPassword;
+        PlayerPrefs.SetString(fileName, JsonUtility.ToJson(Products));
+        PlayerPrefs.Save();
+    }
+
+    private bool LoadLocalData()
+    {
+        string fileName = WebRequestsUtility.storedLogin + "_" + WebRequestsUtility.storedPassword;
+        if (PlayerPrefs.HasKey(fileName))
+        {
+            Products = JsonUtility.FromJson<ProductsList>(PlayerPrefs.GetString(fileName));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private IEnumerator ResolveConflicts(ProductsList serverList, Action callback)
+    {
+        if(Products == null)
+        {
+            if (serverList != null)
+            {
+                Products = serverList;
+            }
+            else
+            {
+                Products = new ProductsList(SystemInfo.deviceUniqueIdentifier);
+                yield return StartCoroutine(WebRequestsUtility.UpdateData());
+            }
+        }
+        else if(serverList == null)
+        {
+            yield return StartCoroutine(WebRequestsUtility.UpdateData());
+        }
+        else if(Products.deviceID.Equals(serverList.deviceID))
+        {
+            DateTime localDateTime = DateTime.Parse(Products.modificationDate, new CultureInfo("en-us"));
+            DateTime serverDateTime = DateTime.Parse(serverList.modificationDate, new CultureInfo("en-us"));
+            if (localDateTime < serverDateTime)
+            {
+                Products = serverList;
+            }
+            else
+            {
+                yield return StartCoroutine(WebRequestsUtility.UpdateData());
+            }
+        }
+        else
+        {
+            ProductsList newList = new ProductsList(SystemInfo.deviceUniqueIdentifier);
+            //serverList
+            Debug.LogError("serverList.StoredProducts.Count=" + serverList.StoredProducts.Count);
+            for (int i = 0; i < serverList.StoredProducts.Count;i++)
+            {
+                int index = Products.StoredProducts.FindIndex((p) => p.Id == serverList.StoredProducts[i].Id);
+                if (index >= 0 && index < Products.StoredProducts.Count)
+                {
+                    if (Products.StoredProducts[index].Price != serverList.StoredProducts[i].Price ||
+                        Products.StoredProducts[index].ProductName != serverList.StoredProducts[i].ProductName ||
+                        Products.StoredProducts[index].Quantity != serverList.StoredProducts[i].Quantity ||
+                        Products.StoredProducts[index].ShopName != serverList.StoredProducts[i].ShopName)
+                    {
+                        UiManager.ResolveConflictPopup.Show();
+                        UiManager.ResolveConflictPopup.Init(Products.StoredProducts[index], serverList.StoredProducts[i]);
+                        Products.StoredProducts.RemoveAt(index);
+                        yield return StartCoroutine(UiManager.ResolveConflictPopup.WaitForAnswer());
+                        if (UiManager.ResolveConflictPopup.SelectedProduct != null)
+                        {
+                            newList.StoredProducts.Add(UiManager.ResolveConflictPopup.SelectedProduct);
+                        }
+                    }
+                    else
+                    {
+                        Products.StoredProducts.RemoveAt(index);
+                        newList.StoredProducts.Add(serverList.StoredProducts[i]);
+                    }
+                }
+                else
+                {
+                    UiManager.ResolveConflictPopup.Show();
+                    UiManager.ResolveConflictPopup.Init(serverList.StoredProducts[i], true);
+                    yield return StartCoroutine(UiManager.ResolveConflictPopup.WaitForAnswer());
+                    if (UiManager.ResolveConflictPopup.SelectedProduct != null)
+                    {
+                        newList.StoredProducts.Add(UiManager.ResolveConflictPopup.SelectedProduct);
+                    }
+                }
+            }
+            //localList
+            for(int i = 0; i < Products.StoredProducts.Count; i++)
+            {
+                UiManager.ResolveConflictPopup.Show();
+                UiManager.ResolveConflictPopup.Init(Products.StoredProducts[i], false);
+                yield return StartCoroutine(UiManager.ResolveConflictPopup.WaitForAnswer());
+                if (UiManager.ResolveConflictPopup.SelectedProduct != null)
+                {
+                    newList.StoredProducts.Add(UiManager.ResolveConflictPopup.SelectedProduct);
+                }
+            }
+            Products = newList;
+            yield return StartCoroutine(WebRequestsUtility.UpdateData());
+        }
+        callback();
     }
 }

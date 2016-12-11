@@ -33,6 +33,17 @@ public class MainScreen : AbstractScreen
         }
     }
 
+    public void OnRefreshPressed()
+    {
+        if (isClickable)
+        {
+            StartCoroutine(WebRequestsUtility.TryGetData((data) =>
+            {
+                ApplicationManager.Instance.UpdateData(data, ProductsTable.UpdateData);
+            }, ()=> { }));
+        }
+    }
+
     public void OnRemoveAccountPressed()
     {
         if(isClickable)

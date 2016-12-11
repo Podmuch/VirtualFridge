@@ -7,8 +7,7 @@ public class LoginScreen : AbstractScreen
     #region CLASS SETTINGS
 
     private const string MISSING_CREDENTIALS = "Uzupełnij hasło lub login";
-    private const string ACCOUNT_WITH_THIS_LOGIN_EXISTS = "Podany login jest zajęty, wybierz inny";
-
+    
     #endregion
 
     #region SCENE REFERENCES
@@ -23,10 +22,10 @@ public class LoginScreen : AbstractScreen
 
     private void Start()
     {
-        if(ApplicationManager.Instance.HasStoredCredentials)
+        if(WebRequestsUtility.HasStoredCredentials)
         {
-            LoginField.text = ApplicationManager.Instance.GetStoredLogin();
-            PasswordField.text = ApplicationManager.Instance.GetStoredPassword();
+            LoginField.text = WebRequestsUtility.GetStoredLogin();
+            PasswordField.text = WebRequestsUtility.GetStoredPassword();
             OnLoginPressed();
         }
     }
@@ -55,7 +54,26 @@ public class LoginScreen : AbstractScreen
     {
         if(isClickable)
         {
-            StartCoroutine(TryCreateNewAccount());
+            if (string.IsNullOrEmpty(LoginField.text) || string.IsNullOrEmpty(PasswordField.text))
+            {
+                ErrorMessage.text = MISSING_CREDENTIALS;
+            }
+            else
+            {
+                isClickable = false;
+                ErrorMessage.text = "";
+                WebRequestsUtility.storedLogin = LoginField.text;
+                WebRequestsUtility.storedPassword = PasswordField.text;
+                StartCoroutine(WebRequestsUtility.TryCreateNewAccount(()=> 
+                {
+                    isClickable = true;
+                    OnLoginPressed();
+                }, () =>
+                {
+                    ErrorMessage.text = WebRequestsUtility.requestError;
+                    isClickable = true;
+                }));
+            }
         }
     }
 
@@ -63,72 +81,27 @@ public class LoginScreen : AbstractScreen
     {
         if(isClickable)
         {
-            StartCoroutine(TryLoginToTheApp());
+            if (string.IsNullOrEmpty(LoginField.text) || string.IsNullOrEmpty(PasswordField.text))
+            {
+                ErrorMessage.text = MISSING_CREDENTIALS;
+            }
+            else
+            {
+                isClickable = false;
+                ErrorMessage.text = "";
+                WebRequestsUtility.storedLogin = LoginField.text;
+                WebRequestsUtility.storedPassword = PasswordField.text;
+                StartCoroutine(WebRequestsUtility.TryGetData(ApplicationManager.Instance.LoginToTheApp, ()=>
+                {
+                    if(!ApplicationManager.Instance.EnterOfflineToTheApp())
+                    {
+                        ErrorMessage.text = WebRequestsUtility.requestError;
+                        isClickable = true;
+                    }
+                }));
+            }
         }
     }
 
     #endregion
-
-    private IEnumerator TryCreateNewAccount()
-    {
-        if (string.IsNullOrEmpty(LoginField.text) || string.IsNullOrEmpty(PasswordField.text))
-        {
-            ErrorMessage.text = MISSING_CREDENTIALS;
-        }
-        else
-        {
-            isClickable = false;
-            ErrorMessage.text = "";
-            ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-            WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Create" + "?login="+ LoginField.text + "&password=" + PasswordField.text);
-            yield return dataRequest;
-            ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-            isClickable = true;
-            if (string.IsNullOrEmpty(dataRequest.error))
-            {
-                if (dataRequest.text.Equals(ACCOUNT_WITH_THIS_LOGIN_EXISTS))
-                {
-                    ErrorMessage.text = dataRequest.text;
-                }
-                else
-                {
-                    OnLoginPressed();
-                }
-            }
-            else
-            {
-                ErrorMessage.text = Utilities.GetErrorMessageFromString(dataRequest.error);
-            }
-        }
-    }
-
-    private IEnumerator TryLoginToTheApp()
-    {
-        if(string.IsNullOrEmpty(LoginField.text) || string.IsNullOrEmpty(PasswordField.text))
-        {
-            ErrorMessage.text = MISSING_CREDENTIALS;
-        }
-        else
-        {
-            isClickable = false;
-            ErrorMessage.text = "";
-            ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-            WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Data" + "?login=" + LoginField.text + "&password=" + PasswordField.text);
-            yield return dataRequest;
-            ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-            isClickable = true;
-            if (string.IsNullOrEmpty(dataRequest.error))
-            {
-                if(!ApplicationManager.Instance.LoginToTheApp(dataRequest.text))
-                {
-                    ErrorMessage.text = dataRequest.text;
-                    ApplicationManager.Instance.RemoveCredentials();
-                }
-            }
-            else
-            {
-                ErrorMessage.text = Utilities.GetErrorMessageFromString(dataRequest.error);
-            }
-        }
-    }
 }

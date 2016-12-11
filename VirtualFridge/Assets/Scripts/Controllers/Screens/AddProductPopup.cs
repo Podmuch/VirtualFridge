@@ -2,11 +2,11 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
 
 public class AddProductPopup : AbstractScreen
 {
     private const string MISSING_ATTRIBUTES = "Nie wszystkie pola są uzupełnione";
-    private const string WRONG_CREDENTIALS = "Błąd uwierzytelnienia, przeloguj się i ponów akcję";
 
     #region SCENE REFERENCES
 
@@ -44,51 +44,28 @@ public class AddProductPopup : AbstractScreen
     {
         if (isClickable)
         {
-            StartCoroutine(TryToAddProduct());
+            if (string.IsNullOrEmpty(NameField.text) || string.IsNullOrEmpty(ShopField.text) || string.IsNullOrEmpty(PriceField.text))
+            {
+                ErrorMessage.text = MISSING_ATTRIBUTES;
+            }
+            else
+            {
+                int uniqueId = GetUniqueID(ApplicationManager.Instance.Products.StoredProducts);
+                ApplicationManager.Instance.Products.StoredProducts.Add(new ProductData(uniqueId, NameField.text, ShopField.text, double.Parse(PriceField.text), 0));
+                ApplicationManager.Instance.SaveLocalData();
+                StartCoroutine(WebRequestsUtility.TryGetData((data) =>
+                {
+                    ApplicationManager.Instance.UpdateData(data, () =>
+                    {
+                        Hide();
+                        ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
+                    });
+                }, () => { }));
+            }
         }
     }
 
     #endregion
-
-    private IEnumerator TryToAddProduct()
-    {
-        if (string.IsNullOrEmpty(NameField.text) || string.IsNullOrEmpty(ShopField.text) || string.IsNullOrEmpty(PriceField.text))
-        {
-            ErrorMessage.text = MISSING_ATTRIBUTES;
-        }
-        else
-        {
-            isClickable = false;
-            ErrorMessage.text = "";
-            ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-            string login = ApplicationManager.Instance.GetStoredLogin();
-            string password = ApplicationManager.Instance.GetStoredPassword();
-            WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Add" + "?login=" + login + "&password=" + password +
-                                      "&product=" + NameField.text + "&shop=" + ShopField.text + "&price=" + decimal.Parse(PriceField.text).ToString("F2"));
-            yield return dataRequest;
-            ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-            if (string.IsNullOrEmpty(dataRequest.error))
-            {
-                if (dataRequest.text.Equals(WRONG_CREDENTIALS) || dataRequest.text.Equals(MISSING_ATTRIBUTES))
-                {
-                    isClickable = true;
-                    ErrorMessage.text = dataRequest.text;
-                }
-                else
-                {
-                    Hide();
-                    int uniqueId = GetUniqueID(ApplicationManager.Instance.StoredProducts);
-                    ApplicationManager.Instance.StoredProducts.Add(new ProductData(uniqueId, NameField.text, ShopField.text, decimal.Parse(PriceField.text), 0));
-                    ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
-                }
-            }
-            else
-            {
-                isClickable = true;
-                ErrorMessage.text = Utilities.GetErrorMessageFromString(dataRequest.error);
-            }
-        }
-    }
 
     private int GetUniqueID(List<ProductData> productsList)
     {
