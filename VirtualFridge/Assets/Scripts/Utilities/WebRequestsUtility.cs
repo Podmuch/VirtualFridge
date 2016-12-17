@@ -15,6 +15,8 @@ public static class WebRequestsUtility
     private const string UNKNOWN_ERROR = "Nieznany bład, spróbuj jeszcze raz";
     private const string WRONG_CREDENTIALS = "Błąd uwierzytelnienia, przeloguj się i ponów akcję";
 
+    private const float TIMEOUT_TIME = 3;
+
     #endregion
 
     public static string storedLogin;
@@ -65,29 +67,32 @@ public static class WebRequestsUtility
     public static IEnumerator TryCreateNewAccount(Action successCallback, Action failCallback)
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
+        float timer = 0;
         WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Create" + "?login=" + storedLogin + "&password=" + storedPassword);
-        yield return dataRequest;
+        yield return new WaitUntil(()=> { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-        if (!CheckErrors(dataRequest)) successCallback();
+        if (dataRequest.isDone&&!CheckErrors(dataRequest)) successCallback();
         else failCallback();
     }
 
     public static IEnumerator TryRemoveAccount(Action successCallback)
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
+        float timer = 0;
         WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Remove" + "?login=" + storedLogin + "&password=" + storedPassword);
-        yield return dataRequest;
+        yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-        if (!CheckErrors(dataRequest)) successCallback();
+        if (dataRequest.isDone && !CheckErrors(dataRequest)) successCallback();
     }
 
     public static IEnumerator TryGetData(Action<string> successCallback, Action failedCallback)
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
+        float timer = 0;
         WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Data" + "?login=" + storedLogin + "&password=" + storedPassword);
-        yield return dataRequest;
+        yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
-        if (!CheckErrors(dataRequest)) successCallback(dataRequest.text);
+        if (dataRequest.isDone && !CheckErrors(dataRequest)) successCallback(dataRequest.text);
         else failedCallback();
     }
 
@@ -95,9 +100,10 @@ public static class WebRequestsUtility
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
         string jsonToSave = JsonUtility.ToJson(ApplicationManager.Instance.Products);
+        float timer = 0;
         WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Update" + "?login=" + storedLogin + "&password=" + storedPassword,
                                   System.Text.Encoding.UTF8.GetBytes(jsonToSave));
-        yield return dataRequest;
+        yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
     }
 
@@ -132,4 +138,10 @@ public static class WebRequestsUtility
     }
 
     #endregion
+
+    private static bool TimeoutMethod(WWW dataRequest, ref float timer)
+    {
+        timer += Time.deltaTime;
+        return dataRequest.isDone || timer > TIMEOUT_TIME;
+    }
 }

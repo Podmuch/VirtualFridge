@@ -82,6 +82,8 @@ public class ApplicationManager : MonoBehaviour
 
     public void SaveLocalData()
     {
+        Products.oldDeviceId = Products.deviceID;
+        Products.oldModificationDate = Products.modificationDate;
         Products.deviceID = SystemInfo.deviceUniqueIdentifier;
         Products.modificationDate = DateTime.Now.ToString(new CultureInfo("en-us"));
         string fileName = WebRequestsUtility.storedLogin + "_" + WebRequestsUtility.storedPassword;
@@ -117,7 +119,8 @@ public class ApplicationManager : MonoBehaviour
                 yield return StartCoroutine(WebRequestsUtility.UpdateData());
             }
         }
-        else if(serverList == null)
+        else if(serverList == null || (Products.oldDeviceId != null && Products.oldDeviceId.Equals(serverList.deviceID) &&
+                Products.oldModificationDate != null && Products.oldModificationDate.Equals(serverList.modificationDate)))
         {
             yield return StartCoroutine(WebRequestsUtility.UpdateData());
         }
@@ -138,7 +141,6 @@ public class ApplicationManager : MonoBehaviour
         {
             ProductsList newList = new ProductsList(SystemInfo.deviceUniqueIdentifier);
             //serverList
-            Debug.LogError("serverList.StoredProducts.Count=" + serverList.StoredProducts.Count);
             for (int i = 0; i < serverList.StoredProducts.Count;i++)
             {
                 int index = Products.StoredProducts.FindIndex((p) => p.Id == serverList.StoredProducts[i].Id);

@@ -60,7 +60,11 @@ public class AddProductPopup : AbstractScreen
                         Hide();
                         ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
                     });
-                }, () => { }));
+                }, () => 
+                {
+                    Hide();
+                    ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
+                }));
             }
         }
     }
