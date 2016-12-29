@@ -10,10 +10,11 @@ public static class WebRequestsUtility
     private const string PASSWORD_PREF = "password";
 
     private const string ACCOUNT_WITH_THIS_LOGIN_EXISTS = "Podany login jest zajęty, wybierz inny";
-    private const string CREDENTIALS_WRONG = "Błędny login lub hasło";
     private const string UNREACHABLE_HOST = "Usługa sieciowa niedostępna, spróbuj jeszcze raz";
     private const string UNKNOWN_ERROR = "Nieznany bład, spróbuj jeszcze raz";
     private const string WRONG_CREDENTIALS = "Błąd uwierzytelnienia, przeloguj się i ponów akcję";
+
+    public const string CREDENTIALS_WRONG = "Błędny login lub hasło";
 
     private const float TIMEOUT_TIME = 3;
 
@@ -24,6 +25,8 @@ public static class WebRequestsUtility
     public static bool HasStoredCredentials { get { return !string.IsNullOrEmpty(GetStoredLogin()) && !string.IsNullOrEmpty(GetStoredPassword()); } }
 
     public static string requestError;
+
+    private static string Credentials { get {return "?login=" + storedLogin + "&password=" + storedPassword; }}
 
     #region CREDENTIALS
 
@@ -68,43 +71,38 @@ public static class WebRequestsUtility
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
         float timer = 0;
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Create" + "?login=" + storedLogin + "&password=" + storedPassword);
+        string requestUrl = ApplicationManager.Instance.ServerURL + "Create" + Credentials;
+        WWW dataRequest = new WWW(requestUrl);
         yield return new WaitUntil(()=> { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
         if (dataRequest.isDone&&!CheckErrors(dataRequest)) successCallback();
         else failCallback();
     }
 
-    public static IEnumerator TryRemoveAccount(Action successCallback)
+    public static IEnumerator TryRemoveAccount(Action successCallback, Action failedCallback)
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
         float timer = 0;
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Remove" + "?login=" + storedLogin + "&password=" + storedPassword);
+        string requestUrl = ApplicationManager.Instance.ServerURL + "Remove" + Credentials;
+        WWW dataRequest = new WWW(requestUrl);
         yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
         if (dataRequest.isDone && !CheckErrors(dataRequest)) successCallback();
+        else failedCallback();
     }
 
     public static IEnumerator TryGetData(Action<string> successCallback, Action failedCallback)
     {
         ApplicationManager.Instance.UiManager.LoadingScreen.Show();
         float timer = 0;
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Data" + "?login=" + storedLogin + "&password=" + storedPassword);
+        SyncCall requestData = ApplicationManager.Instance.Products.GetSyncCall();
+        string jsonToSave = JsonUtility.ToJson(requestData),
+               requestUrl = ApplicationManager.Instance.ServerURL + "Data" + Credentials;
+        WWW dataRequest = new WWW(requestUrl, System.Text.Encoding.UTF8.GetBytes(jsonToSave));
         yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
         ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
         if (dataRequest.isDone && !CheckErrors(dataRequest)) successCallback(dataRequest.text);
         else failedCallback();
-    }
-
-    public static IEnumerator UpdateData()
-    {
-        ApplicationManager.Instance.UiManager.LoadingScreen.Show();
-        string jsonToSave = JsonUtility.ToJson(ApplicationManager.Instance.Products);
-        float timer = 0;
-        WWW dataRequest = new WWW(ApplicationManager.Instance.ServerURL + "Update" + "?login=" + storedLogin + "&password=" + storedPassword,
-                                  System.Text.Encoding.UTF8.GetBytes(jsonToSave));
-        yield return new WaitUntil(() => { return TimeoutMethod(dataRequest, ref timer); });
-        ApplicationManager.Instance.UiManager.LoadingScreen.Hide();
     }
 
     private static bool CheckErrors(WWW dataRequest)

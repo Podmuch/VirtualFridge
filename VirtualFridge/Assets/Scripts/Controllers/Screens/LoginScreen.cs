@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using System;
 
 public class LoginScreen : AbstractScreen
 {
@@ -91,16 +92,29 @@ public class LoginScreen : AbstractScreen
                 ErrorMessage.text = "";
                 WebRequestsUtility.storedLogin = LoginField.text;
                 WebRequestsUtility.storedPassword = PasswordField.text;
-                StartCoroutine(WebRequestsUtility.TryGetData(ApplicationManager.Instance.LoginToTheApp, ()=>
-                {
-                    if(!ApplicationManager.Instance.EnterOfflineToTheApp())
-                    {
-                        ErrorMessage.text = WebRequestsUtility.requestError;
-                        isClickable = true;
-                    }
-                }));
+                bool accountExitsts = ApplicationManager.Instance.LoadLocalData();
+                StartCoroutine(WebRequestsUtility.TryGetData(ApplicationManager.Instance.LoginToTheApp, ()=> { HandleLoginErrors(accountExitsts); }));
             }
         }
+    }
+
+    private void HandleLoginErrors(bool accountExitsts)
+    {
+        if (accountExitsts)
+        {
+            if (WebRequestsUtility.requestError == WebRequestsUtility.CREDENTIALS_WRONG)
+            {
+                ApplicationManager.Instance.RemoveLocalData();
+                WebRequestsUtility.RemoveCredentials();
+            }
+            else
+            {
+                WebRequestsUtility.SaveCredentials();
+                ApplicationManager.Instance.UiManager.ChangeScreen(ApplicationManager.Instance.UiManager.MainScreen);
+            }
+        }
+        ErrorMessage.text = WebRequestsUtility.requestError;
+        isClickable = true;
     }
 
     #endregion

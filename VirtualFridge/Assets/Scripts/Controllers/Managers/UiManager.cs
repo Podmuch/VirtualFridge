@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class UiManager : MonoBehaviour
 {
@@ -8,7 +7,6 @@ public class UiManager : MonoBehaviour
     public MainScreen MainScreen;
     public LoginScreen LoginScreen;
     public LoadingScreen LoadingScreen;
-    public ResolveConflictPopup ResolveConflictPopup;
 
     #endregion
 
@@ -20,7 +18,6 @@ public class UiManager : MonoBehaviour
         LoginScreen.SetStateImmediately(true);
         LoadingScreen.SetStateImmediately(false);
         MainScreen.SetStateImmediately(false);
-        ResolveConflictPopup.SetStateImmediately(false);
     }
 
     public void ChangeScreen(AbstractScreen newScreen)

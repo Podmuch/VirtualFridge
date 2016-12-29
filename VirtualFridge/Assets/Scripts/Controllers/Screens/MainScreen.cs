@@ -1,7 +1,4 @@
-﻿using UnityEngine;
-using System.Collections;
-
-public class MainScreen : AbstractScreen
+﻿public class MainScreen : AbstractScreen
 {
     #region SCENE REFERENCES
 

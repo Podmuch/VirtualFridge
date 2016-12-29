@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,14 +45,11 @@ public class ProductsTable : MonoBehaviour
         if (SelectedProduct != null)
         {
             int nextIndex = ApplicationManager.Instance.Products.StoredProducts.IndexOf(SelectedProduct);
-            ApplicationManager.Instance.Products.StoredProducts.Remove(SelectedProduct);
+            ApplicationManager.Instance.Products.RemoveElement(SelectedProduct);
             SelectedProduct = ApplicationManager.Instance.Products.StoredProducts.Count > nextIndex ? 
                               ApplicationManager.Instance.Products.StoredProducts[nextIndex] : null;
             ApplicationManager.Instance.SaveLocalData();
-            StartCoroutine(WebRequestsUtility.TryGetData((data) =>
-            {
-                ApplicationManager.Instance.UpdateData(data, UpdateData);
-            }, () => { }));
+            StartCoroutine(WebRequestsUtility.TryGetData((data) => { ApplicationManager.Instance.UpdateData(data, UpdateData); }, () => { }));
         }
         else
         {

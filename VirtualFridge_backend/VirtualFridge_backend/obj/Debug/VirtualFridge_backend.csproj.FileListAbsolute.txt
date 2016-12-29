@@ -87,3 +87,4 @@ C:\Users\domin\Documents\Github\VirtualFridge\VirtualFridge_backend\VirtualFridg
 C:\Users\domin\Documents\Github\VirtualFridge\VirtualFridge_backend\VirtualFridge_backend\bin\System.Web.Http.Owin.xml
 C:\Users\domin\Documents\Github\VirtualFridge\VirtualFridge_backend\VirtualFridge_backend\obj\Debug\VirtualFridge_backend.dll
 C:\Users\domin\Documents\Github\VirtualFridge\VirtualFridge_backend\VirtualFridge_backend\obj\Debug\VirtualFridge_backend.pdb
+C:\Users\domin\Documents\Github\VirtualFridge\VirtualFridge_backend\VirtualFridge_backend\obj\Debug\VirtualFridge_backend.csprojResolveAssemblyReference.cache

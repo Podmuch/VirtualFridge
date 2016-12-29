@@ -1,8 +1,5 @@
-﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
 using System.Collections.Generic;
-using System;
 
 public class AddProductPopup : AbstractScreen
 {
@@ -51,25 +48,20 @@ public class AddProductPopup : AbstractScreen
             else
             {
                 int uniqueId = GetUniqueID(ApplicationManager.Instance.Products.StoredProducts);
-                ApplicationManager.Instance.Products.StoredProducts.Add(new ProductData(uniqueId, NameField.text, ShopField.text, double.Parse(PriceField.text), 0));
+                ApplicationManager.Instance.Products.AddNewElement(new ProductData(uniqueId, NameField.text, ShopField.text, double.Parse(PriceField.text), 0));
                 ApplicationManager.Instance.SaveLocalData();
-                StartCoroutine(WebRequestsUtility.TryGetData((data) =>
-                {
-                    ApplicationManager.Instance.UpdateData(data, () =>
-                    {
-                        Hide();
-                        ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
-                    });
-                }, () => 
-                {
-                    Hide();
-                    ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
-                }));
+                StartCoroutine(WebRequestsUtility.TryGetData((data) => { ApplicationManager.Instance.UpdateData(data, HideWithUpdate); }, HideWithUpdate));
             }
         }
     }
 
     #endregion
+
+    private void HideWithUpdate()
+    {
+        Hide();
+        ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData();
+    }
 
     private int GetUniqueID(List<ProductData> productsList)
     {

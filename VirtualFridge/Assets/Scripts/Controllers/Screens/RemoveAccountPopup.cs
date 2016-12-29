@@ -36,14 +36,18 @@ public class RemoveAccountPopup : AbstractScreen
         {
             isClickable = false;
             ErrorMessage.text = "";
-            StartCoroutine(WebRequestsUtility.TryRemoveAccount(OnAccountRemoved));
-            ErrorMessage.text = WebRequestsUtility.requestError;
-            isClickable = true;
+            StartCoroutine(WebRequestsUtility.TryRemoveAccount(OnAccountRemoved, OnRemoveFailed));
         }
     }
 
     #endregion
     
+    private void OnRemoveFailed()
+    {
+        ErrorMessage.text = WebRequestsUtility.requestError;
+        isClickable = true;
+    }
+
     private void OnAccountRemoved()
     {
         ApplicationManager.Instance.RemoveLocalData();

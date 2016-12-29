@@ -58,14 +58,8 @@ public class ProductEntry : MonoBehaviour
 
     public void OnQuantityEditingFinished()
     {
-        int newQuantity = int.Parse(QuantityField.text);
-        int itemIndex = ApplicationManager.Instance.Products.StoredProducts.IndexOf(EntryData);
-        ApplicationManager.Instance.Products.StoredProducts[itemIndex].Quantity = newQuantity;
-        EntryData.Quantity = newQuantity;
+        EntryData = ApplicationManager.Instance.Products.UpdateElement(EntryData, int.Parse(QuantityField.text));
         ApplicationManager.Instance.SaveLocalData();
-        StartCoroutine(WebRequestsUtility.TryGetData((data) =>
-        {
-            ApplicationManager.Instance.UpdateData(data, ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData);
-        }, () => { }));
+        StartCoroutine(WebRequestsUtility.TryGetData((data) => { ApplicationManager.Instance.UpdateData(data, ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData); }, () => { }));
     }
 }
