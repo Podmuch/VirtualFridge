@@ -2,5 +2,7 @@
 {
     UPDATE,
     REMOVE,
-    ADD
+    ADD,
+    SHARE,
+    UNSHARE
 }

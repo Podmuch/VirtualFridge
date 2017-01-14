@@ -4,6 +4,7 @@
 
     public AddProductPopup AddProductPopup;
     public RemoveAccountPopup RemoveAccountPopup;
+    public ShareProductPopup ShareProductPopup;
     public ProductsTable ProductsTable;
 
     #endregion
@@ -15,6 +16,7 @@
         base.Show();
         AddProductPopup.SetStateImmediately(false);
         RemoveAccountPopup.SetStateImmediately(false);
+        ShareProductPopup.SetStateImmediately(false);
         ProductsTable.UpdateData();
     }
 

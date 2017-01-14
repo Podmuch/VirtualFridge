@@ -48,7 +48,7 @@ public class AddProductPopup : AbstractScreen
             else
             {
                 int uniqueId = GetUniqueID(ApplicationManager.Instance.Products.StoredProducts);
-                ApplicationManager.Instance.Products.AddNewElement(new ProductData(uniqueId, NameField.text, ShopField.text, double.Parse(PriceField.text), 0));
+                ApplicationManager.Instance.Products.AddNewElement(new ProductData(uniqueId, NameField.text, ShopField.text, double.Parse(PriceField.text), 0, new List<string>(new string[] { WebRequestsUtility.storedLogin })));
                 ApplicationManager.Instance.SaveLocalData();
                 StartCoroutine(WebRequestsUtility.TryGetData((data) => { ApplicationManager.Instance.UpdateData(data, HideWithUpdate); }, HideWithUpdate));
             }

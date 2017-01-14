@@ -3,23 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Script.Serialization;
 
 namespace VirtualFridge_backend.Controllers
 {
     [RoutePrefix("Details")]
     public class DetailsController : Controller
     {
+        private const string DATA_FILE_NAME = "usersData";
         // GET: Details
         public ActionResult Index(string login = null)
         {
             string details = "";
-            if (!string.IsNullOrEmpty(login))
+            string pathToUserData = Server.MapPath(DATA_FILE_NAME);
+            if (System.IO.File.Exists(pathToUserData))
             {
-                string pathToUserData = Server.MapPath(login);
-                if (System.IO.File.Exists(pathToUserData))
-                {
-                    return Content(System.IO.File.ReadAllText(pathToUserData));
-                }
+                details = System.IO.File.ReadAllText(pathToUserData);
+            }
+            //
+            if(login != null && details != "")
+            {
+                JavaScriptSerializer serializer = new JavaScriptSerializer();
+                ServerState serverState = serializer.Deserialize<ServerState>(details);
+                serverState.KeepOnlyOwnedProducts(login);
+                details = serializer.Serialize(serverState);
             }
             return Content(details);
         }

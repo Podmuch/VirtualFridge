@@ -35,6 +35,23 @@ public class ProductsList : SyncCall
         return productData;
     }
 
+    public ProductData ChangeSubowners(ProductData productData, bool isShared, string sharedOwner)
+    {
+        if (isShared)
+        {
+            if (!productData.Owners.Contains(sharedOwner))
+            {
+                productData.Owners.Add(sharedOwner);
+            }
+        }
+        else
+        {
+            productData.Owners.RemoveAll((o) => o.Equals(sharedOwner));
+        }
+        UnsyncChanges.Add(new RegisteredChange(productData, sharedOwner, isShared));
+        return productData;
+    }
+
     public SyncCall GetSyncCall()
     {
         return new SyncCall(this);

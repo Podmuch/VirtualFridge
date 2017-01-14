@@ -19,24 +19,4 @@ public class ProductsList : SyncCall
         StoredProducts = new List<ProductData>();
         UnsyncChanges = new List<RegisteredChange>();
     }
-
-    public void AddNewElement(ProductData productData)
-    {
-        UnsyncChanges.Add(new RegisteredChange(productData, ChangeType.ADD));
-        StoredProducts.Add(productData);
-    }
-
-    public void RemoveElement(ProductData productData)
-    {
-        UnsyncChanges.Add(new RegisteredChange(productData, ChangeType.REMOVE));
-        StoredProducts.Remove(productData);
-    }
-
-    public ProductData UpdateElement(ProductData productData, int newQuantity)
-    {
-        int oldQuantity = productData.Quantity;
-        productData.Quantity = newQuantity;
-        UnsyncChanges.Add(new RegisteredChange(productData, newQuantity - oldQuantity));
-        return productData;
-    }
 }

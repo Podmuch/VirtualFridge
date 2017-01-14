@@ -32,7 +32,7 @@ public class ProductsTable : MonoBehaviour
                                      new List<ProductData>();
         CreateMissingEntries(products.Count);
         DisableAllEntries();
-        Content.sizeDelta = new Vector2(Content.sizeDelta.x, Header.preferredHeight * products.Count);
+        Content.sizeDelta = new Vector2(Content.sizeDelta.x, Header.preferredHeight * 2 * products.Count);
         for (int i = 0; i < products.Count; i++)
         {
             TableEntries[i].AsignData(i % 2 == 0, SelectedProduct == null ? false : products[i].Id == SelectedProduct.Id, 

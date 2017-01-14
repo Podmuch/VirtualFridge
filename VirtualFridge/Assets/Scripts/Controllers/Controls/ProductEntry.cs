@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using System;
+using System.Collections.Generic;
 
 public class ProductEntry : MonoBehaviour
 {
@@ -24,6 +25,8 @@ public class ProductEntry : MonoBehaviour
     public Text ShopNameLabel;
     public Text PriceLabel;
     public InputField QuantityField;
+    public Dropdown SubownersDropdown;
+    public GameObject RemoveButton;
 
     #endregion
 
@@ -40,6 +43,18 @@ public class ProductEntry : MonoBehaviour
         ShopNameLabel.text = EntryData.ShopName;
         PriceLabel.text = EntryData.Price.ToString("F2");
         QuantityField.text = EntryData.Quantity.ToString();
+        List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
+        for (int i = 0; i < EntryData.Owners.Count; i++)
+        {
+            if (!EntryData.Owners[i].Equals(WebRequestsUtility.storedLogin))
+            {
+                options.Add(new Dropdown.OptionData(EntryData.Owners[i]));
+            }
+        }
+        SubownersDropdown.value = 0;
+        SubownersDropdown.options = options;
+        SubownersDropdown.interactable = options.Count > 0;
+        RemoveButton.SetActive(SubownersDropdown.interactable);
         pressedCallback = _pressedCallback;
     }
 
@@ -53,6 +68,21 @@ public class ProductEntry : MonoBehaviour
         if (BackgroundImage.color != SELECTED_COLOR)
         {
             pressedCallback(this);
+        }
+    }
+
+    public void OnShareWithPressed()
+    {
+        ApplicationManager.Instance.UiManager.MainScreen.ShareProductPopup.ShareProduct(EntryData);
+    }
+
+    public void OnUnshareWithSelectedPressed()
+    {
+        if (SubownersDropdown.interactable)
+        {
+            EntryData = ApplicationManager.Instance.Products.ChangeSubowners(EntryData, false, SubownersDropdown.options[SubownersDropdown.value].text);
+            ApplicationManager.Instance.SaveLocalData();
+            StartCoroutine(WebRequestsUtility.TryGetData((data) => { ApplicationManager.Instance.UpdateData(data, ApplicationManager.Instance.UiManager.MainScreen.ProductsTable.UpdateData); }, () => { }));
         }
     }
 
